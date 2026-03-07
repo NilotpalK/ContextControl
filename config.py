@@ -12,7 +12,7 @@ SQLITE_PATH = BASE_DIR / "context_control.db"
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 TAGGER_MODEL    = os.getenv("TAGGER_MODEL", "llama3.2:3b")
 MEM0_MODEL      = os.getenv("MEM0_MODEL", "llama3.2:3b")
-EMBED_MODEL     = os.getenv("EMBED_MODEL", "nomic-embed-text")
+EMBED_MODEL     = os.getenv("EMBED_MODEL", "text-embedding-3-small")
 
 # ── OpenRouter ─────────────────────────────────────────────────────────────────
 OPENROUTER_API_KEY  = os.getenv("OPENROUTER_API_KEY", "")
@@ -27,10 +27,9 @@ KUZU_PATH         = os.getenv("KUZU_PATH", "kuzu_db")
 MEM0_CONFIG = {
     "version": "v1.1",
     "embedder": {
-        "provider": "ollama",
+        "provider": "openai",
         "config": {
             "model": EMBED_MODEL,
-            "ollama_base_url": OLLAMA_BASE_URL,
         }
     },
     "llm": {
