@@ -55,8 +55,8 @@ async def lifespan(app: FastAPI):
     # before any request arrives.  mem0 initialises lazily on first call
     # which can block single-threaded uvicorn for ~60 seconds.
     try:
-        from mem0_client import get_client
-        get_client()
+        from mem0_client import get_read_client
+        get_read_client()
         print("[startup] mem0 client ready")
     except Exception as e:
         print(f"[startup] mem0 pre-warm warning: {e}")
@@ -401,14 +401,17 @@ class ChatRequest(BaseModel):
 
 
 @app.post("/chat")
-async def chat(req: ChatRequest, background_tasks: BackgroundTasks):
+async def chat(req: ChatRequest, request: Request, background_tasks: BackgroundTasks):
     """
     All-in-one chat endpoint for testing.
-    Pipeline:
-      1. Assemble clean filtered context
-      2. Stream response from OpenRouter back to client
-      3. In the background: Store exchange, tag, and feed to mem0
     """
+    api_key = request.headers.get("Authorization", "").replace("Bearer ", "").strip()
+    if not api_key:
+        raise HTTPException(status_code=401, detail="Missing OpenRouter API Key in headers")
+
+    if not api_key.startswith("sk-or-v1-"):
+        raise HTTPException(status_code=401, detail="Invalid API Key format. OpenRouter keys must start with 'sk-or-v1-'")
+
     if not get_session(req.session_id):
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -417,6 +420,7 @@ async def chat(req: ChatRequest, background_tasks: BackgroundTasks):
         session_id=req.session_id,
         user_id=req.user_id,
         current_message=req.message,
+        api_key=api_key,
     )
     messages   = format_for_api(context)
 
@@ -432,7 +436,7 @@ async def chat(req: ChatRequest, background_tasks: BackgroundTasks):
     # Step 2 — Call OpenRouter with streaming
     client = OpenAI(
         base_url=OPENROUTER_BASE_URL,
-        api_key=OPENROUTER_API_KEY,
+        api_key=api_key,
     )
 
     def _background_pipeline(assistant_reply: str):
@@ -452,6 +456,7 @@ async def chat(req: ChatRequest, background_tasks: BackgroundTasks):
             asst_turn=assistant_reply,
             session_id=req.session_id,
             exchange_id=exchange_id,
+            api_key=api_key,
         )
 
         try:
@@ -460,6 +465,7 @@ async def chat(req: ChatRequest, background_tasks: BackgroundTasks):
                 asst_turn=assistant_reply,
                 session_id=req.session_id,
                 user_id=req.user_id,
+                api_key=api_key,
             )
         except Exception as e:
             print(f"[mem0] Warning: {e}")

@@ -2,9 +2,16 @@ import axios from 'axios';
 
 const API_BASE = 'http://localhost:8000';
 
+export let GLOBAL_API_KEY = "";
+
 export const api = axios.create({
     baseURL: API_BASE,
 });
+
+export const setGlobalApiKey = (key) => {
+    GLOBAL_API_KEY = key;
+    api.defaults.headers.common['Authorization'] = `Bearer ${key}`;
+};
 
 export const getTopics = async (sessionId) => {
     const res = await api.get(`/topics/${sessionId}`);
@@ -47,6 +54,7 @@ export const streamChat = async (message, sessionId, userId, onChunk) => {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${GLOBAL_API_KEY}`
         },
         body: JSON.stringify({
             session_id: sessionId,

@@ -36,3 +36,5 @@ frontend/*.local
 .DS_Store
 .AppleDouble
 .LSOverride
+kuzu.db/
+chroma.db/

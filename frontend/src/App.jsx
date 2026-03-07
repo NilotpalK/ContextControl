@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
-import { getTopics, hideTopic, showTopic, streamChat, getSessionDetails, getAllSessions, deleteSession, api } from './api';
+import { getTopics, hideTopic, showTopic, streamChat, getSessionDetails, getAllSessions, deleteSession, api, setGlobalApiKey } from './api';
+import LoginModal from './components/LoginModal';
+import ConfirmModal from './components/ConfirmModal';
 
 export default function App() {
   const [messages, setMessages] = useState([
@@ -10,11 +12,21 @@ export default function App() {
   const [topics, setTopics] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [sessionsList, setSessionsList] = useState([]);
+  const [userId] = useState(() => {
+    let id = localStorage.getItem('context_user_id');
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem('context_user_id', id);
+    }
+    return id;
+  });
+  const [apiKey, setApiKey] = useState('');
   const [sessionId, setSessionId] = useState(() => localStorage.getItem('context_session_id') || null);
+  const [sessionToDelete, setSessionToDelete] = useState(null);
 
   const fetchAllSessions = async () => {
     try {
-      const data = await getAllSessions('user_1');
+      const data = await getAllSessions(userId);
       if (data.sessions) setSessionsList(data.sessions);
     } catch (e) {
       console.error(e);
@@ -22,7 +34,7 @@ export default function App() {
   };
 
   const createNewSession = () => {
-    api.post('/sessions', { user_id: 'user_1' })
+    api.post('/sessions', { user_id: userId })
       .then(res => {
         setSessionId(res.data.session_id);
         localStorage.setItem('context_session_id', res.data.session_id);
@@ -33,8 +45,8 @@ export default function App() {
       .catch(err => console.error("Failed to create session:", err));
   };
 
-  const loadSession = (id) => {
-    if (id === sessionId) return;
+  const loadSession = (id, force = false) => {
+    if (id === sessionId && !force) return;
 
     setSessionId(id);
     localStorage.setItem('context_session_id', id);
@@ -56,8 +68,13 @@ export default function App() {
     });
   };
 
-  const handleDeleteSession = async (id) => {
-    if (!window.confirm("Are you sure you want to permanently delete this chat?")) return;
+  const handleDeleteSession = (id) => {
+    setSessionToDelete(id);
+  };
+
+  const executeDeleteSession = async () => {
+    if (!sessionToDelete) return;
+    const id = sessionToDelete;
     try {
       await deleteSession(id);
       if (id === sessionId) {
@@ -67,6 +84,8 @@ export default function App() {
       }
     } catch (err) {
       console.error("Failed to delete session", err);
+    } finally {
+      setSessionToDelete(null);
     }
   };
 
@@ -74,7 +93,7 @@ export default function App() {
   useEffect(() => {
     fetchAllSessions();
     if (sessionId) {
-      loadSession(sessionId);
+      loadSession(sessionId, true);
     } else {
       createNewSession();
     }
@@ -126,19 +145,32 @@ export default function App() {
     try {
       let assistantReply = "";
 
-      await streamChat(text, sessionId, 'user_1', (chunk) => {
+      await streamChat(text, sessionId, userId, (chunk) => {
         assistantReply += chunk;
         setMessages([...newMsgs, { role: 'assistant', content: assistantReply }]);
       });
-
+      // Refresh the sidebar so the auto-titled session name appears
+      fetchAllSessions();
     } catch (e) {
       console.error(e);
       setMessages([...newMsgs, { role: 'assistant', content: '[Error connecting to backend]' }]);
+      fetchAllSessions(); // Also refresh on error, in case a session was created but title failed
     } finally {
       setIsStreaming(false);
       // Let the 3-second poller pick up new topics generated in the background
     }
   };
+
+  if (!apiKey) {
+    return (
+      <LoginModal
+        onKeySubmit={(key) => {
+          setGlobalApiKey(key);
+          setApiKey(key);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="app-container">
@@ -156,6 +188,15 @@ export default function App() {
         onSendMessage={handleSendMessage}
         isStreaming={isStreaming}
       />
+
+      {sessionToDelete && (
+        <ConfirmModal
+          title="Delete Chat"
+          message="Are you sure you want to permanently delete this chat? This action cannot be undone."
+          onConfirm={executeDeleteSession}
+          onCancel={() => setSessionToDelete(null)}
+        />
+      )}
     </div>
   );
 }

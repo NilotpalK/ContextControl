@@ -61,7 +61,7 @@ def filter_memories(memories: list[str], hidden_topics: list[str]) -> list[str]:
 
 # ── Context injection note ─────────────────────────────────────────────────────
 
-def build_system_note(hidden_count: int, memories: list[str]) -> str:
+def build_system_note(hidden_count: int, memories: list[str], hidden_topics: list[str] = None) -> str:
     """
     Build the system note prepended to context.
     Tells the model about hidden exchanges so it is not confused
@@ -82,6 +82,15 @@ def build_system_note(hidden_count: int, memories: list[str]) -> str:
             f"by the user. The conversation history below may have gaps — this is intentional."
         )
 
+    if hidden_topics:
+        blocked = ", ".join(hidden_topics)
+        parts.append(
+            f"CRITICAL INSTRUCTION: The user has explicitly BLOCKED the following topics/personas: {blocked}. "
+            f"You MUST NOT mention them, and you MUST STRICTLY ABANDON any personas, accents, or roleplay "
+            f"associated with those topics, even if they appear in the immediate Assistant conversation history below. "
+            f"Immediately revert to a standard, helpful assistant tone."
+        )
+
     return "\n".join(parts)
 
 
@@ -91,6 +100,7 @@ def assemble_context(
     session_id: str,
     user_id: str,
     current_message: str,
+    api_key: str = "",
 ) -> ContextResponse:
     """
     Build the clean filtered context block for an API call.
@@ -145,12 +155,15 @@ def assemble_context(
             final_visible = imported_exchanges + final_visible
 
     # ── Step 3 — Memories ──────────────────────────────────────────────────────
-    raw_memories = search_memories(
-        query=current_message,
-        user_id=user_id,
-        session_id=session_id,
-    )
-    memories = filter_memories(raw_memories, hidden_topics)
+    memories = []
+    if current_message.strip():
+        raw_memories = search_memories(
+            query=current_message,
+            user_id=user_id,
+            session_id=session_id,
+            api_key=api_key,
+        )
+        memories = filter_memories(raw_memories, hidden_topics)
 
     # ── Step 4 — Return ────────────────────────────────────────────────────────
     return ContextResponse(
@@ -218,7 +231,7 @@ def format_for_api(context: ContextResponse) -> list[dict]:
     messages = []
 
     # Inject system note if we have memories or hidden exchanges
-    system_note = build_system_note(context.hidden_count, context.memories)
+    system_note = build_system_note(context.hidden_count, context.memories, get_hidden_topics(context.session_id))
     if system_note:
         messages.append({
             "role":    "system",

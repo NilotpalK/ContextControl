@@ -5,7 +5,6 @@ from typing import Optional
 
 from config import (
     OPENROUTER_BASE_URL,
-    OPENROUTER_API_KEY,
     TAGGER_MODEL,
     CONFIDENCE_THRESHOLD,
     CHAIN_REFERENCE_KEYWORDS,
@@ -79,12 +78,12 @@ Return ONLY a valid JSON object, no explanation, no markdown:
 
 # ── OpenRouter caller ──────────────────────────────────────────────────────────
 
-def call_openrouter(prompt: str) -> str:
+def call_openrouter(prompt: str, api_key: str) -> str:
     """Send prompt to OpenRouter and return raw text response."""
     response = requests.post(
         f"{OPENROUTER_BASE_URL}/chat/completions",
         headers={
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         },
         json={
@@ -156,6 +155,7 @@ def tag_exchange(
     user_turn: str,
     asst_turn: str,
     session_id: str,
+    api_key: str,
     exchange_id: Optional[str] = None,
 ) -> TagResult:
     """
@@ -185,7 +185,7 @@ def tag_exchange(
     )
 
     try:
-        raw  = call_openrouter(prompt)
+        raw  = call_openrouter(prompt, api_key)
         data = extract_json(raw)
 
         # ── Resolve references_exchange_id ───────────────────────────────────

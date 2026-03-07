@@ -87,29 +87,31 @@ export default function Sidebar({ topics, onToggleTopic, sessionsList = [], curr
                                     {session.title || "New Conversation"}
                                 </span>
                             </div>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onDeleteSession) onDeleteSession(session.id);
-                                }}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    padding: '4px',
-                                    cursor: 'pointer',
-                                    color: 'var(--text-muted)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: '4px',
-                                    transition: 'color 0.2s',
-                                }}
-                                onMouseOver={e => { e.currentTarget.style.color = '#ef4444'; }}
-                                onMouseOut={e => { e.currentTarget.style.color = 'var(--text-muted)'; }}
-                                title="Delete Chat"
-                            >
-                                <Trash2 size={14} />
-                            </button>
+                            {currentSessionId !== session.id && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onDeleteSession) onDeleteSession(session.id);
+                                    }}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        padding: '4px',
+                                        cursor: 'pointer',
+                                        color: 'var(--text-muted)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        borderRadius: '4px',
+                                        transition: 'color 0.2s',
+                                    }}
+                                    onMouseOver={e => { e.currentTarget.style.color = '#ef4444'; }}
+                                    onMouseOut={e => { e.currentTarget.style.color = 'var(--text-muted)'; }}
+                                    title="Delete Chat"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            )}
                         </div>
                     ))}
                     {sessionsList.length === 0 && (
