@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Send, Cpu } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const Loader = () => (
     <div className="loader">
@@ -42,8 +44,10 @@ export default function ChatWindow({ messages, onSendMessage, isStreaming }) {
             <div className="chat-messages">
                 {messages.map((m, i) => (
                     <div key={i} className={`message ${m.role === 'user' ? 'user' : 'assistant'}`}>
-                        <div className="message-bubble">
-                            {m.content}
+                        <div className="message-bubble markdown-body">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {m.content}
+                            </ReactMarkdown>
                         </div>
                     </div>
                 ))}
