@@ -57,6 +57,7 @@ export default function App() {
   };
 
   const handleDeleteSession = async (id) => {
+    if (!window.confirm("Are you sure you want to permanently delete this chat?")) return;
     try {
       await deleteSession(id);
       if (id === sessionId) {
