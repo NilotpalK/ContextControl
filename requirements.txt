@@ -4,3 +4,4 @@ mem0ai[graph]
 openai
 pydantic
 python-dotenv
+requests
