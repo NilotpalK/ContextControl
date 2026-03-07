@@ -32,6 +32,11 @@ export const getSessionDetails = async (sessionId) => {
     return res.data;
 };
 
+export const getAllSessions = async (userId) => {
+    const res = await api.get(`/sessions/${userId}`);
+    return res.data;
+};
+
 export const streamChat = async (message, sessionId, userId, onChunk) => {
     const response = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
