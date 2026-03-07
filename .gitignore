@@ -1,0 +1,38 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Databases
+*.db
+*.sqlite3
+*.sqlite
+.mem0_chroma/
+.mem0_kuzu/
+chroma_db/
+kuzu_db/
+mem0_chroma/
+mem0_kuzu/
+
+# Logs
+*.log
+
+# Frontend (Vite/React)
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# OS Files
+.DS_Store
+.AppleDouble
+.LSOverride
