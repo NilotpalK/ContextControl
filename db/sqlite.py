@@ -110,6 +110,33 @@ def get_user_sessions(user_id: str) -> list:
         ).fetchall()
 
 
+def delete_session(session_id: str):
+    """Delete a session entirely, securely cascading down to all relevant tables."""
+    with get_conn() as conn:
+        # Delete related exchange refs
+        conn.execute(
+            "DELETE FROM exchange_refs WHERE from_exchange_id IN (SELECT id FROM exchanges WHERE session_id = ?)",
+            (session_id,)
+        )
+        conn.execute(
+            "DELETE FROM exchange_refs WHERE to_exchange_id IN (SELECT id FROM exchanges WHERE session_id = ?)",
+            (session_id,)
+        )
+        # Delete related exchange tags
+        conn.execute(
+            "DELETE FROM exchange_topics WHERE exchange_id IN (SELECT id FROM exchanges WHERE session_id = ?)",
+            (session_id,)
+        )
+        # Delete exchanges
+        conn.execute("DELETE FROM exchanges WHERE session_id = ?", (session_id,))
+        # Delete imports
+        conn.execute("DELETE FROM session_imports WHERE target_session_id = ? OR source_session_id = ?", (session_id, session_id))
+        # Delete topics
+        conn.execute("DELETE FROM topics WHERE session_id = ?", (session_id,))
+        # Finally delete session
+        conn.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
+
+
 def update_session_title(session_id: str, title: str):
     with get_conn() as conn:
         conn.execute(

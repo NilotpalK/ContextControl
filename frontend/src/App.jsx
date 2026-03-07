@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
-import { getTopics, hideTopic, showTopic, streamChat, getSessionDetails, getAllSessions, api } from './api';
+import { getTopics, hideTopic, showTopic, streamChat, getSessionDetails, getAllSessions, deleteSession, api } from './api';
 
 export default function App() {
   const [messages, setMessages] = useState([
@@ -9,6 +9,7 @@ export default function App() {
   ]);
   const [topics, setTopics] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [sessionsList, setSessionsList] = useState([]);
   const [sessionId, setSessionId] = useState(() => localStorage.getItem('context_session_id') || null);
 
   const fetchAllSessions = async () => {
@@ -33,6 +34,8 @@ export default function App() {
   };
 
   const loadSession = (id) => {
+    if (id === sessionId) return;
+
     setSessionId(id);
     localStorage.setItem('context_session_id', id);
     setTopics([]); // Clear while loading
@@ -40,8 +43,8 @@ export default function App() {
       if (data.exchanges && data.exchanges.length > 0) {
         const restoredMsgs = [{ role: 'assistant', content: 'Hello! I am connected to the ContextControl backend. How can I help you today?' }];
         data.exchanges.forEach(ex => {
-          restoredMsgs.push({ role: 'user', content: ex.message });
-          restoredMsgs.push({ role: 'assistant', content: ex.response });
+          restoredMsgs.push({ role: 'user', content: ex.user_turn });
+          restoredMsgs.push({ role: 'assistant', content: ex.asst_turn });
         });
         setMessages(restoredMsgs);
       } else {
@@ -51,6 +54,19 @@ export default function App() {
       console.warn("Failed to load session details", err);
       createNewSession();
     });
+  };
+
+  const handleDeleteSession = async (id) => {
+    try {
+      await deleteSession(id);
+      if (id === sessionId) {
+        createNewSession();
+      } else {
+        fetchAllSessions();
+      }
+    } catch (err) {
+      console.error("Failed to delete session", err);
+    }
   };
 
   // Create or Restore session on mount
@@ -132,6 +148,7 @@ export default function App() {
         currentSessionId={sessionId}
         onSelectSession={loadSession}
         onNewChat={createNewSession}
+        onDeleteSession={handleDeleteSession}
       />
       <ChatWindow
         messages={messages}

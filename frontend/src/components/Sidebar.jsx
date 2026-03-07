@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Network, Database, Search, MessageSquare, Plus } from 'lucide-react';
+import { Network, Database, Search, MessageSquare, Plus, Trash2 } from 'lucide-react';
 import '../index.css';
 
 const TopicPill = ({ topic, onToggle }) => {
@@ -22,7 +22,7 @@ const TopicPill = ({ topic, onToggle }) => {
     );
 };
 
-export default function Sidebar({ topics, onToggleTopic, sessionsList = [], currentSessionId, onSelectSession, onNewChat }) {
+export default function Sidebar({ topics, onToggleTopic, sessionsList = [], currentSessionId, onSelectSession, onNewChat, onDeleteSession }) {
     const [searchQuery, setSearchQuery] = useState('');
 
     const filteredTopics = (topics || []).filter(t =>
@@ -77,14 +77,39 @@ export default function Sidebar({ topics, onToggleTopic, sessionsList = [], curr
                                 }
                             }}
                         >
-                            <MessageSquare
-                                size={16}
-                                color={currentSessionId === session.id ? 'var(--accent-hover)' : 'var(--text-muted)'}
-                                style={{ minWidth: '16px' }}
-                            />
-                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {session.title || "New Conversation"}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', flex: 1, gap: '10px', overflow: 'hidden' }}>
+                                <MessageSquare
+                                    size={16}
+                                    color={currentSessionId === session.id ? 'var(--accent-hover)' : 'var(--text-muted)'}
+                                    style={{ minWidth: '16px' }}
+                                />
+                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {session.title || "New Conversation"}
+                                </span>
+                            </div>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onDeleteSession) onDeleteSession(session.id);
+                                }}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    padding: '4px',
+                                    cursor: 'pointer',
+                                    color: 'var(--text-muted)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: '4px',
+                                    transition: 'color 0.2s',
+                                }}
+                                onMouseOver={e => { e.currentTarget.style.color = '#ef4444'; }}
+                                onMouseOut={e => { e.currentTarget.style.color = 'var(--text-muted)'; }}
+                                title="Delete Chat"
+                            >
+                                <Trash2 size={14} />
+                            </button>
                         </div>
                     ))}
                     {sessionsList.length === 0 && (

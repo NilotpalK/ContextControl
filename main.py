@@ -19,6 +19,7 @@ from db.sqlite import (
     get_session,
     get_user_sessions,
     get_exchange,
+    get_session_exchanges,
     get_topics,
     get_topics_for_exchange,
     get_reference_target,
@@ -33,6 +34,7 @@ from db.sqlite import (
     save_session_import,
     get_imports_for_session,
     delete_session_import,
+    delete_session,
 )
 from core.tagger import tag_exchange
 from core.cascade import on_topic_hide, on_topic_show
@@ -108,15 +110,27 @@ def list_sessions(user_id: str):
 
 @app.get("/sessions/{session_id}/detail")
 def get_session_detail(session_id: str):
-    """Get a single session with its imports."""
+    """Get a single session with its imports and exchanges."""
     session = get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     imports = get_imports_for_session(session_id)
+    exchanges = get_session_exchanges(session_id)
     return {
         "session": dict(session),
         "imports": [dict(i) for i in imports],
+        "exchanges": [dict(ex) for ex in exchanges],
     }
+
+
+@app.delete("/sessions/{session_id}")
+def delete_session_endpoint(session_id: str):
+    """Delete a session entirely."""
+    session = get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    delete_session(session_id)
+    return {"status": "success"}
 
 
 @app.post("/sessions/{session_id}/import")

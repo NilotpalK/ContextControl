@@ -37,6 +37,11 @@ export const getAllSessions = async (userId) => {
     return res.data;
 };
 
+export const deleteSession = async (sessionId) => {
+    const res = await api.delete(`/sessions/${sessionId}`);
+    return res.data;
+};
+
 export const streamChat = async (message, sessionId, userId, onChunk) => {
     const response = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
