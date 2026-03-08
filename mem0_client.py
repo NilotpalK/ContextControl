@@ -1,27 +1,40 @@
-from mem0 import Memory
-from config import MEM0_CONFIG
+import copy
 
 # ── Client singleton ───────────────────────────────────────────────────────────
 # Initialized per API key to cleanly silo API credentials in memory.
+# mem0 + sentence-transformers + torch are imported LAZILY to avoid blocking
+# server startup (critical for HuggingFace Spaces health check timeouts).
 
-import copy
-_write_clients: dict[str, Memory] = {}
-_read_client: Memory | None = None
+_Memory = None  # lazy import placeholder
+_write_clients: dict = {}
+_read_client = None
 
-def get_read_client() -> Memory:
+def _get_memory_class():
+    """Lazy import of mem0.Memory to avoid loading torch at module import time."""
+    global _Memory
+    if _Memory is None:
+        from mem0 import Memory
+        _Memory = Memory
+    return _Memory
+
+def get_read_client():
     """Singleton strictly for synchronous search. Never blocked by dynamic API key generation."""
     global _read_client
     if _read_client is None:
+        from config import MEM0_CONFIG
+        Memory = _get_memory_class()
         cfg = copy.deepcopy(MEM0_CONFIG)
         cfg["llm"]["config"]["api_key"] = "read_only_dummy"
         _read_client = Memory.from_config(cfg)
     return _read_client
 
-def get_write_client(api_key: str) -> Memory:
+def get_write_client(api_key: str):
     """Siloed instantiation for background entity extraction using real dynamic LLM credentials."""
     if not api_key:
         api_key = "dummy_key"
     if api_key not in _write_clients:
+        from config import MEM0_CONFIG
+        Memory = _get_memory_class()
         cfg = copy.deepcopy(MEM0_CONFIG)
         cfg["llm"]["config"]["api_key"] = api_key
         _write_clients[api_key] = Memory.from_config(cfg)

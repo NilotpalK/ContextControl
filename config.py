@@ -45,13 +45,17 @@ MEM0_CONFIG = {
             "path": str(BASE_DIR / CHROMA_PATH),
         }
     },
-    "graph_store": {
+}
+
+# Graph store is optional — disable on resource-constrained environments
+# (e.g. HuggingFace free-tier CPU) by setting DISABLE_GRAPH_STORE=1
+if not os.getenv("DISABLE_GRAPH_STORE"):
+    MEM0_CONFIG["graph_store"] = {
         "provider": "kuzu",
         "config": {
             "database_path": str(BASE_DIR / KUZU_PATH),
         }
-    },
-}
+    }
 
 # ── Tagger ─────────────────────────────────────────────────────────────────────
 CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.70"))

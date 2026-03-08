@@ -38,3 +38,4 @@ frontend/*.local
 .LSOverride
 kuzu.db/
 chroma.db/
+hf_deploy/
