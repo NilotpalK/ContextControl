@@ -47,19 +47,21 @@ from mem0_client import add_exchange as mem0_add_exchange
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize the database and pre-warm mem0 on startup."""
+    """Initialize the database on startup. mem0 warms lazily on first request."""
     init_db()
     print("[startup] Database initialized")
 
-    # Pre-warm mem0 so ChromaDB + Kuzu + the embedding model are ready
-    # before any request arrives.  mem0 initialises lazily on first call
-    # which can block single-threaded uvicorn for ~60 seconds.
-    try:
-        from mem0_client import get_read_client
-        get_read_client()
-        print("[startup] mem0 client ready")
-    except Exception as e:
-        print(f"[startup] mem0 pre-warm warning: {e}")
+    # Warm mem0 in a background thread so the server starts instantly
+    # and passes HuggingFace Spaces health checks before the timeout.
+    import threading
+    def _warm():
+        try:
+            from mem0_client import get_read_client
+            get_read_client()
+            print("[startup] mem0 client ready (background)")
+        except Exception as e:
+            print(f"[startup] mem0 pre-warm warning: {e}")
+    threading.Thread(target=_warm, daemon=True).start()
 
     yield
 
