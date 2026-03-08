@@ -82,6 +82,10 @@ app.add_middleware(
 
 # ── Health check ───────────────────────────────────────────────────────────────
 
+@app.get("/")
+def root():
+    return {"status": "ok", "service": "ContextControl API"}
+
 @app.get("/health")
 def health():
     return {"status": "ok", "version": "1.0.0"}
