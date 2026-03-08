@@ -9,8 +9,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the backend
 COPY . .
 
-# Expose the API port
-EXPOSE 10000
+# Expose the API port (HuggingFace Spaces expects 7860)
+EXPOSE 7860
 
 # Boot the FastAPI uvicorn engine
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "10000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]

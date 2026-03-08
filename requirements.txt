@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 mem0ai[graph]
+chromadb
 openai
 pydantic
 python-dotenv
